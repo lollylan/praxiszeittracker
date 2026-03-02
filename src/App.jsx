@@ -7,6 +7,8 @@ const PRAXIS_TASKS = [
   { id: "nachbearbeitung", label: "Nachbearbeitung", color: "#F39C12", icon: "📋", countsPatient: false },
   { id: "unterbrechung", label: "Unterbrechung", color: "#E74C3C", icon: "📞", countsPatient: false },
   { id: "kollegial", label: "Koll. Gespräch", color: "#795548", icon: "🗣️", countsPatient: false },
+  { id: "telefonat", label: "Telefonat", color: "#00ACC1", icon: "📱", countsPatient: false },
+  { id: "papierkram", label: "Papierkram", color: "#607D8B", icon: "📄", countsPatient: false },
 ];
 const HAUSBESUCH_TASKS = [
   { id: "hb_weg", label: "Fahrzeit", color: "#16A085", icon: "🚗", countsPatient: false },
