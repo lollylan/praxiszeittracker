@@ -36,16 +36,43 @@ const TabBtn = ({ active, onClick, children }) => (
   }}>{children}</button>
 );
 export default function App() {
-  const [mode, setMode] = useState("praxis"); // praxis | hausbesuch
+  const [mode, setMode] = useState(() => localStorage.getItem("praxis_mode") || "praxis"); // praxis | hausbesuch
   const [view, setView] = useState("tracker"); // tracker | stats
-  const [activeTask, setActiveTask] = useState(null);
-  const [taskStart, setTaskStart] = useState(null);
-  const [log, setLog] = useState([]);
-  const [totals, setTotals] = useState({});
+  const [activeTask, setActiveTask] = useState(() => localStorage.getItem("praxis_activeTask") || null);
+  const [taskStart, setTaskStart] = useState(() => {
+    const ts = localStorage.getItem("praxis_taskStart");
+    return ts ? parseInt(ts, 10) : null;
+  });
+  const [log, setLog] = useState(() => JSON.parse(localStorage.getItem("praxis_log") || "[]"));
+  const [totals, setTotals] = useState(() => JSON.parse(localStorage.getItem("praxis_totals") || "{}"));
   const [now, setNow] = useState(Date.now());
   // Patient counter
-  const [praxisPatients, setPraxisPatients] = useState(0);
-  const [hbPatients, setHbPatients] = useState(0);
+  const [praxisPatients, setPraxisPatients] = useState(() => parseInt(localStorage.getItem("praxis_patients") || "0", 10));
+  const [hbPatients, setHbPatients] = useState(() => parseInt(localStorage.getItem("hb_patients") || "0", 10));
+  
+  // Consent and Impressum
+  const [showConsent, setShowConsent] = useState(() => !localStorage.getItem("praxis_consent"));
+  const [showImpressum, setShowImpressum] = useState(false);
+
+  // Sync to localStorage
+  useEffect(() => { localStorage.setItem("praxis_mode", mode); }, [mode]);
+  useEffect(() => { localStorage.setItem("praxis_log", JSON.stringify(log)); }, [log]);
+  useEffect(() => { localStorage.setItem("praxis_totals", JSON.stringify(totals)); }, [totals]);
+  useEffect(() => { localStorage.setItem("praxis_patients", praxisPatients.toString()); }, [praxisPatients]);
+  useEffect(() => { localStorage.setItem("hb_patients", hbPatients.toString()); }, [hbPatients]);
+  useEffect(() => {
+    if (activeTask) localStorage.setItem("praxis_activeTask", activeTask);
+    else localStorage.removeItem("praxis_activeTask");
+  }, [activeTask]);
+  useEffect(() => {
+    if (taskStart) localStorage.setItem("praxis_taskStart", taskStart.toString());
+    else localStorage.removeItem("praxis_taskStart");
+  }, [taskStart]);
+
+  const acceptConsent = () => {
+    localStorage.setItem("praxis_consent", "true");
+    setShowConsent(false);
+  };
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
@@ -317,6 +344,74 @@ export default function App() {
             </div>
           )}
         </>
+      )}
+      
+      {/* Footer */}
+      <div style={{ textAlign: "center", marginTop: 40, paddingBottom: 20 }}>
+        <button onClick={() => setShowImpressum(true)} style={{
+          background: "none", border: "none", color: "#888", fontSize: 13, cursor: "pointer", textDecoration: "underline"
+        }}>Impressum & Datenschutz</button>
+      </div>
+
+      {/* Impressum Modal */}
+      {showImpressum && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0, 
+          background: "rgba(0,0,0,0.5)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000, padding: 20
+        }}>
+          <div style={{ background: "white", padding: 24, borderRadius: 12, maxWidth: 400, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <h2 style={{ marginTop: 0 }}>Impressum & Datenschutz</h2>
+            
+            <h3>Impressum</h3>
+            <p><strong>Angaben gemäß § 5 TMG:</strong><br/>
+              Florian Rasche<br/>
+              Huttenstr. 6<br/>
+              97072 Würzburg<br/>
+              E-Mail: <a href="mailto:florian.rasche@googlemail.com">florian.rasche@googlemail.com</a>
+            </p>
+
+            <h3>Datenschutzerklärung</h3>
+            <p><strong>1. Lokale Speicherung (Local Storage)</strong><br/>
+              Diese App speichert die von Ihnen erfassten Zeiten, Statistiken und den aktuellen Status direkt in Ihrem Browser (Local Storage). 
+              Dies dient ausschließlich dazu, dass Ihre Daten beim versehentlichen Schließen oder Neuladen der Seite nicht verloren gehen. 
+              Es werden keine Tracking-Cookies für Werbezwecke verwendet und die gesammelten Daten werden nicht an uns oder Dritte gesendet; sie verbleiben ausschließlich auf Ihrem Gerät.
+            </p>
+            <p><strong>2. Hosting über GitHub Pages</strong><br/>
+              Diese Webseite wird über GitHub Pages gehostet. Wenn Sie diese Seite aufrufen, 
+              erfasst und speichert GitHub standardmäßig Verbindungsdaten (z. B. Ihre IP-Adresse), 
+              um die Sicherheit und Verfügbarkeit des Dienstes zu gewährleisten. 
+              Weitere Informationen finden Sie in der Datenschutzerklärung von GitHub.
+            </p>
+            
+            <button onClick={() => setShowImpressum(false)} style={{
+              width: "100%", padding: 12, borderRadius: 8, border: "none", background: "#1a2e44", color: "white", fontWeight: "bold", cursor: "pointer", marginTop: 16
+            }}>Schließen</button>
+          </div>
+        </div>
+      )}
+
+      {/* Consent Banner */}
+      {showConsent && (
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, background: "#1a2e44", color: "white", padding: 16, zIndex: 999,
+          display: "flex", flexDirection: "column", gap: 12, boxShadow: "0 -2px 10px rgba(0,0,0,0.2)"
+        }}>
+          <div style={{ maxWidth: 480, margin: "0 auto", fontSize: 13, lineHeight: 1.5 }}>
+            <strong>Datenschutzhinweis:</strong> Diese App speichert Ihre erfassten Zeiten lokal auf Ihrem Gerät (Local Storage), damit keine Daten verloren gehen, wenn Sie den Browser schließen. Da diese Seite auf GitHub gehostet wird, speichert GitHub systembedingt Verbindungsdaten (z.B. Ihre IP-Adresse).
+            <div style={{ marginTop: 8 }}>
+              <button 
+                onClick={() => { setShowImpressum(true); }}
+                style={{ background: "none", border: "none", color: "#4A90D9", padding: 0, textDecoration: "underline", cursor: "pointer" }}>
+                Mehr erfahren (Impressum & Datenschutz)
+              </button>
+            </div>
+          </div>
+          <div style={{ maxWidth: 480, margin: "0 auto", width: "100%" }}>
+            <button onClick={acceptConsent} style={{
+              width: "100%", padding: 12, borderRadius: 8, border: "none", background: "#4A90D9", color: "white", fontWeight: "bold", cursor: "pointer"
+            }}>Einverstanden</button>
+          </div>
+        </div>
       )}
     </div>
   );
